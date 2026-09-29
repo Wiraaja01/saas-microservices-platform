@@ -1,0 +1,87 @@
+#untuk database terlebih dahulu 
+services:
+  db:
+    image: postgres:13-alpine
+    container_name: db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: saasdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    restart: unless-stopped
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"      # AMQP protocol
+      - "15672:15672"    # Management UI
+    volumes:
+      - ./data/rabbitmq:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+#gentian service-apinya
+  api-service:
+    build: ./apps/api-service
+    container_name: api-service
+    ports:
+      - "4000:4000"
+    env_file:
+      - ./apps/api-service/.env
+    depends_on:
+      - db
+    restart: unless-stopped
+  gateway-service:
+    build: ./apps/gateway-service
+    container_name: gateway-service
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./apps/gateway-service/.env
+    depends_on:
+      - api-service
+    restart: unless-stopped
+  worker-service:
+    build: ./apps/worker-service
+    container_name: worker-service
+    env_file:
+      - ./apps/worker-service/.env
+    depends_on:
+      - db
+      - api-service
+    restart: unless-stopped 
+#kemudian jalankan untuk front endnya
+  frontend:
+    build: ./apps/frontend
+    container_name: frontend
+    ports: 
+      - "3000:80"
+    env_file:
+      - ./apps/frontend/.env
+    depends_on:
+      - api-service
+      - gateway-service
+      - worker-service
+    restart: unless-stopped

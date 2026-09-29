@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  apiKeys   ApiKey[]
+}
+
+model ApiKey {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  name      String   @default("Default Key")
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  requestLogs RequestLog[]
+
+  @@index([userId])
+}
+
+model RequestLog {
+  id         String   @id @default(uuid())
+  apiKeyId   String
+  apiKey     ApiKey   @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+  endpoint   String
+  method     String   @default("POST")
+  statusCode Int
+  latencyMs  Int
+  model      String?
+  tokensUsed Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([apiKeyId, createdAt])
+}

@@ -1,0 +1,25 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Worker hanya butuh model ini
+// (tidak perlu User & ApiKey — itu tanggung jawab api-service)
+model RequestLog {
+  id         String   @id @default(uuid())
+  apiKeyId   String
+  endpoint   String
+  method     String   @default("POST")
+  statusCode Int
+  latencyMs  Int
+  model      String?
+  tokensUsed Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([apiKeyId, createdAt])
+}
