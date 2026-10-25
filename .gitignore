@@ -62,20 +62,21 @@ mysql-data/
 mongo-data/
 
 
-infrastructure/**/.terraform/
-infrastructure/**/.terraform.lock.hcl
-infrastructure/**/*.tfstate
-infrastructure/**/*.tfstate.*
-infrastructure/**/*.tfvars
-infrastructure/**/*.tfvars.json
-infrastructure/**/.terraformrc
-infrastructure/**/terraform.rc
-infrastructure/**/crash.log
-infrastructure/**/crash.*.log
-infrastructure/**/override.tf
-infrastructure/**/override.tf.json
-infrastructure/**/*_override.tf
-infrastructure/**/*_override.tf.json
+# Terraform
+.terraform/
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/*.tfvars
+terraform/*.tfvars.json
+terraform/terraform.rc
+terraform/crash.log
+terraform/crash.*.log
+terraform/override.tf
+terraform/override.tf.json
+terraform/*_override.tf
+terraform/*_override.tf.json
 
 
 kubernetes/**/secret.yaml
