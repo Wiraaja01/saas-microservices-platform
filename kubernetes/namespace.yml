@@ -1,0 +1,7 @@
+# This is a Kubernetes Namespace configuration file.
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: Example
+  
