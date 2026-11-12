@@ -1,0 +1,12 @@
+#membuat service untuk api-service
+apiVersion: v1
+kind: Service
+metadata:
+  name: apiservice-service
+  namespace: microservice-app
+spec:
+  selector:
+    app: apiservice
+  ports:
+    - protocol: TCP
+      port: 4000

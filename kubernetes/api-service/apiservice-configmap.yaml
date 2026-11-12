@@ -1,0 +1,12 @@
+#configmap untuk api service
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apiservice-env-configmap
+  namespace: microservice-app
+data:
+  PORT: "4000"
+  NODE_ENV: "production"
+  JWT_EXPIRES_IN: "24h"
+  REDIS_URL: "redis://redis:6379"
+  POSTGRES_DB: "saasdb"

@@ -38,12 +38,6 @@ variable "key_name" {
   description = "SSH key untuk aws"
   type = string
 }
-  
-variable "db_password" {
-  description = "Password database"
-  type = string
-  sensitive = true
-}
 
 variable "postgres_user" {
   type    = string

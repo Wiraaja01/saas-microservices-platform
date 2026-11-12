@@ -1,0 +1,25 @@
+# Ingress api-service menggunakan Traefik (ingressClass bawaan k3s).
+# BELUM DI-APPLY. Ganti host sesuai domain yang dipakai.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: apiservice-ingress
+  namespace: microservice-app
+  labels:
+    app: apiservice
+  annotations:
+    # Entry point HTTP. Kalau nanti sudah ada TLS, pindah ke websecure + router.tls.
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: aitoken.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: apiservice-service
+                port:
+                  number: 4000

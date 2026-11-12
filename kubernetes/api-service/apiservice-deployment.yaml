@@ -1,0 +1,70 @@
+#deployment api service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apiservice-deployment
+  namespace: microservice-app
+  labels:
+    app: apiservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: apiservice
+  template:
+    metadata:
+      labels:
+        app: apiservice
+    spec:
+      containers:
+        - name: apiservice
+          image: wiraaja1/microservice-on-kube-with-cicd-api-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 4000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "250m"
+            limits:
+              memory: "64Mi"
+              cpu: "250m"
+          envFrom:
+            # PORT, NODE_ENV, JWT_EXPIRES_IN, REDIS_URL, POSTGRES_DB
+            - configMapRef:
+                name: apiservice-env-configmap
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: apiservice-secret
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: apiservice-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: apiservice-secret
+                  key: POSTGRES_PASSWORD
+            # Prisma membaca DATABASE_URL (bukan DB_HOST terpisah).
+            - name: DATABASE_URL
+              value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-service:5432/$(POSTGRES_DB)"

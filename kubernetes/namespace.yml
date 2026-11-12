@@ -1,7 +1,6 @@
-# This is a Kubernetes Namespace configuration file.
-
+#namespace untuk app
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: Example
-  
+  name: microservice-app
+
