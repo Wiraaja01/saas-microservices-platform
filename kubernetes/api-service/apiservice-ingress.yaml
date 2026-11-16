@@ -1,5 +1,4 @@
 # Ingress api-service menggunakan Traefik (ingressClass bawaan k3s).
-# BELUM DI-APPLY. Ganti host sesuai domain yang dipakai.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -8,10 +7,15 @@ metadata:
   labels:
     app: apiservice
   annotations:
-    # Entry point HTTP. Kalau nanti sudah ada TLS, pindah ke websecure + router.tls.
-    traefik.ingress.kubernetes.io/router.entrypoints: web
+    # Entry point HTTPS (websecure). Sertifikat diambil dari Secret di bawah.
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
 spec:
   ingressClassName: traefik
+  tls:
+    - hosts:
+        - aitoken.com
+      secretName: apiservice-secret
   rules:
     - host: aitoken.com
       http:

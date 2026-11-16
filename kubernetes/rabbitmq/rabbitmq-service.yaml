@@ -1,0 +1,22 @@
+---
+# Service internal untuk RabbitMQ (AMQP + Management UI).
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq-service
+  namespace: microservice-app
+  labels:
+    app: rabbitmq
+spec:
+  type: ClusterIP
+  selector:
+    app: rabbitmq
+  ports:
+    - name: amqp
+      protocol: TCP
+      port: 5672
+      targetPort: amqp
+    - name: management
+      protocol: TCP
+      port: 15672
+      targetPort: management

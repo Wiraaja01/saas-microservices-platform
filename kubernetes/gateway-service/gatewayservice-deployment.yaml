@@ -1,0 +1,36 @@
+apiversion: apps/v1
+kind: Deployment
+metadata:
+  name: gatewayservice-deployment
+  namespace: microservice-app
+  labels:
+    app: gatewayservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gatewayservice
+  template:
+    metadata:
+      labels:
+        app: gatewayservice
+    spec:
+      containers:
+        - name: gatewayservice
+          image: wiraaja1/microservice-on-kube-with-cicd-gateway-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "300m"
+              memory: "256Mi"
+          envFrom:
+            - configMapRef:
+                name: gatewayservice-config
+            - secretRef:
+                name: gatewayservice-secret
+              

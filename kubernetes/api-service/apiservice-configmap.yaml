@@ -8,5 +8,5 @@ data:
   PORT: "4000"
   NODE_ENV: "production"
   JWT_EXPIRES_IN: "24h"
-  REDIS_URL: "redis://redis:6379"
+  REDIS_URL: "redis://redis-service:6379"
   POSTGRES_DB: "saasdb"

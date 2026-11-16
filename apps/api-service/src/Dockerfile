@@ -21,4 +21,4 @@ COPY --from=builder /app/src ./src
 
 EXPOSE 4000
 # Jalankan perintah untuk memulai aplikasi
-CMD ["sh", "-c", "npx prisma db push --skip-generate && node src/index.js"]
+CMD ["node", "src/index.js"]

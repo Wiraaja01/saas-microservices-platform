@@ -39,11 +39,15 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
+//sementara untuk rabbitMQ, karena limit dari instance rabbit mq dibuat dummy dan tetap jalan tanpa rabbbit MQ
 (async () => {
-  await connectRabbitMQ();
-  const server = app.listen(PORT, () => {
-    console.log(`🚀 Gateway Service running on port ${PORT}`);
-  });
+  try {
+    await connectRabbitMQ();
+  } catch (err) {
+    console.error("Gagal konek RabbitMQ, lanjut jalan tanpa queue...");
+  }
+  const server = app.listen(PORT, () => { console.log(`🚀 Gateway Service running on port ${PORT}`); });
+})();
 
   process.on('SIGTERM', async () => {
     console.log('Shutting down Gateway Service...');
@@ -52,4 +56,3 @@ app.use((err, req, res, next) => {
       process.exit(0);
     });
   });
-})();

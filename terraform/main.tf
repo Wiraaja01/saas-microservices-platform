@@ -173,6 +173,7 @@ resource "aws_vpc_security_group_egress_rule" "vpc_endpoint_https" {
   description       = "Allow HTTPS to VPC CIDR"
 }
 
+#menggunakan VPC Endpoint untuk SSM agar appserver & monitoring bisa diakses lewat SSM Session Manager tanpa perlu public IP.
 locals {
   ssm_vpc_endpoint_services = toset(["ssm", "ssmmessages", "ec2messages"])
 }

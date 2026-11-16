@@ -18,10 +18,12 @@ spec:
     spec:
       containers:
         - name: apiservice
-          image: wiraaja1/microservice-on-kube-with-cicd-api-service:latest
+          image: wiraaja1/microservice-on-kube-with-cicd-api-service:v2
           imagePullPolicy: Always
           ports:
             - containerPort: 4000
+#tambah probe untuk cek kesehatan container
+#sempat ada kejadian CrashloopBackOff karena memory limit, jadi menambahkan startup probe
           readinessProbe:
             httpGet:
               path: /health
@@ -38,15 +40,24 @@ spec:
             periodSeconds: 20
             timeoutSeconds: 3
             failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
           resources:
             requests:
-              memory: "32Mi"
-              cpu: "250m"
+#setel sesuai kebutuhan. Ini masih prototype 1
+#Sempet ada kejadian CrashloopBackOff karena memory limit
+              memory: "128Mi"
+              cpu: "500m"
             limits:
-              memory: "64Mi"
-              cpu: "250m"
+              memory: "256Mi"
+              cpu: "500m"
           envFrom:
-            # PORT, NODE_ENV, JWT_EXPIRES_IN, REDIS_URL, POSTGRES_DB
             - configMapRef:
                 name: apiservice-env-configmap
           env:
@@ -68,3 +79,9 @@ spec:
             # Prisma membaca DATABASE_URL (bukan DB_HOST terpisah).
             - name: DATABASE_URL
               value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-service:5432/$(POSTGRES_DB)"
+            # Wajib ada di production
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: apiservice-secret
+                  key: JWT_SECRET
