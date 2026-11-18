@@ -1,0 +1,59 @@
+# cloudflared berjalan di dalam cluster dan membuka koneksi keluar ke Cloudflare.
+# Tidak perlu port inbound, tidak perlu EIP, tidak perlu ALB.
+apiVersion: apps/v1 # versi API Deployment
+kind: Deployment # jenis resource yang dibuat
+metadata:
+  name: cloudflared # nama deployment
+  namespace: cloudflare-tunnel # namespace harus sama dengan Secret
+spec:
+  replicas: 1 # cukup satu pod untuk cluster single-node
+  selector:
+    matchLabels:
+      app: cloudflared # harus sama dengan label pod
+  template:
+    metadata:
+      labels:
+        app: cloudflared # dipakai selector Deployment
+    spec:
+      containers:
+        - name: cloudflared # nama container
+          image: cloudflare/cloudflared:latest # image resmi Cloudflare
+          imagePullPolicy: IfNotPresent # ambil image hanya kalau belum ada di node
+          command: # urutan perintah sesuai dokumentasi Cloudflare
+            - cloudflared # binary utama
+            - tunnel # mode tunnel
+            - --no-autoupdate # jangan self-update di dalam container
+            - --loglevel # level log
+            - info # cukup info supaya hemat resource
+            - --metrics # endpoint health check
+            - 0.0.0.0:2000 # dengar di port 2000
+            - run # jalankan tunnel memakai token
+          env:
+            - name: TUNNEL_TOKEN # cloudflared membaca otomatis env ini
+              valueFrom:
+                secretKeyRef:
+                  name: cloudflare-tunnel-token # nama Secret (dibuat manual)
+                  key: token # key di dalam Secret
+          ports:
+            - name: metrics # nama port untuk probe
+              containerPort: 2000 # port /ready
+          resources:
+            requests:
+              cpu: "10m" # jatah CPU minimum
+              memory: "32Mi" # jatah memory minimum
+            limits:
+              cpu: "100m" # batas CPU
+              memory: "128Mi" # batas memory supaya node 2GB aman
+          readinessProbe: # cek apakah tunnel sudah tersambung
+            httpGet:
+              path: /ready # endpoint bawaan cloudflared
+              port: metrics # port 2000
+            initialDelaySeconds: 5 # tunggu 5 detik sebelum cek pertama
+            periodSeconds: 10 # cek tiap 10 detik
+          livenessProbe: # restart kalau tunnel putus
+            httpGet:
+              path: /ready # endpoint yang sama
+              port: metrics # port 2000
+            initialDelaySeconds: 15 # beri waktu lebih lama saat boot
+            periodSeconds: 15 # cek tiap 15 detik
+            failureThreshold: 3 # restart setelah 3 kali gagal

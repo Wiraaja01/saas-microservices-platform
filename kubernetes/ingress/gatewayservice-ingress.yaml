@@ -1,0 +1,27 @@
+# Ingress untuk /v1: browser -> gatewayservice-service.
+apiVersion: networking.k8s.io/v1 # versi API Ingress, tetap seperti ini
+kind: Ingress # jenis resource yang dibuat
+metadata:
+  name: gatewayservice-ingress # nama ingress
+  namespace: microservice-app # namespace harus sama dengan service
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure # pakai port HTTPS
+    traefik.ingress.kubernetes.io/router.tls: "true" # aktifkan TLS
+    traefik.ingress.kubernetes.io/router.priority: "100" # /v1 didahulukan dari path /
+spec:
+  ingressClassName: traefik # pakai Traefik bawaan k3s
+  tls:
+    - hosts:
+        - tokenaiku.com # host yang tertera di sertifikat
+      secretName: apiservice-secret # isinya tls.crt dan tls.key
+  rules:
+    - host: tokenaiku.com # domain yang diketik di browser
+      http:
+        paths:
+          - path: /v1 # path yang dipakai frontend untuk chat completion
+            pathType: Prefix # cocokkan /v1 dan semua turunannya
+            backend:
+              service:
+                name: gatewayservice-service # service tujuan
+                port:
+                  number: 5000 # port di dalam service

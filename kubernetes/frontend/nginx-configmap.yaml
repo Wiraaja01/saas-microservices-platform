@@ -1,0 +1,28 @@
+# Config statis untuk nginx di dalam pod frontend.
+# /api dan /v1 tidak perlu di-proxy di sini, sudah diatur Ingress.
+apiVersion: v1 # versi API ConfigMap
+kind: ConfigMap # jenis resource yang dibuat
+metadata:
+  name: frontend-nginx-config # nama yang dipakai Deployment
+  namespace: microservice-app # namespace harus sama dengan pod
+data:
+  default.conf: |
+    server {
+        listen 80;
+        root /usr/share/nginx/html;
+        index index.html;
+
+        location / {
+            try_files $uri /index.html;
+        }
+
+        location ~* \.(png|jpg|jpeg|gif|ico|svg)$ {
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+        }
+
+        location ~* \.(js|css)$ {
+            expires 1h;
+            add_header Cache-Control "public, must-revalidate";
+        }
+    }

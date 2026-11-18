@@ -1,0 +1,26 @@
+# Ingress untuk /: browser -> frontend-service.
+apiVersion: networking.k8s.io/v1 # versi API Ingress, tetap seperti ini
+kind: Ingress # jenis resource yang dibuat
+metadata:
+  name: frontendservice-ingress # nama ingress
+  namespace: microservice-app # namespace harus sama dengan service
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure # pakai port HTTPS
+    traefik.ingress.kubernetes.io/router.tls: "true" # aktifkan TLS
+spec:
+  ingressClassName: traefik # pakai Traefik bawaan k3s
+  tls:
+    - hosts:
+        - tokenaiku.com # host yang tertera di sertifikat
+      secretName: apiservice-secret # isinya tls.crt dan tls.key
+  rules:
+    - host: tokenaiku.com # domain yang diketik di browser
+      http:
+        paths:
+          - path: / # path utama, prioritas paling rendah
+            pathType: Prefix # cocokkan root dan halaman React
+            backend:
+              service:
+                name: frontend-service # service frontend (belum dibuat)
+                port:
+                  number: 80 # port nginx di dalam container

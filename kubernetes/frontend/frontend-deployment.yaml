@@ -1,0 +1,40 @@
+# Deployment frontend: menjalankan image nginx yang berisi build React.
+apiVersion: apps/v1
+kind: Deployment 
+metadata:
+  name: frontend-deployment 
+  namespace: microservice-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend 
+  template:
+    metadata:
+      labels:
+        app: frontend 
+    spec:
+      containers:
+        - name: frontend 
+          image: wiraaja1/microservice-on-kube-with-cicd-frontend:latest
+          imagePullPolicy: IfNotPresent 
+          ports:
+            - containerPort: 80 
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "32Mi"
+            limits:
+              cpu: "200m" 
+              memory: "64Mi" 
+          envFrom:
+            - configMapRef:
+                name: frontend-config 
+          volumeMounts:
+            - name: nginx-conf # pasang nginx.conf dari ConfigMap
+              mountPath: /etc/nginx/conf.d/default.conf # menimpa config lama di image
+              subPath: default.conf # ambil satu key saja dari ConfigMap
+      volumes:
+        - name: nginx-conf # nama volume yang dipakai di atas
+          configMap:
+            name: frontend-nginx-config # ConfigMap berisi nginx.conf yang benar

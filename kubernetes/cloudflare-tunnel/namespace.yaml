@@ -1,0 +1,7 @@
+# Namespace khusus cloudflared, dipisah dari aplikasi.
+apiVersion: v1 # versi API Namespace, tetap v1
+kind: Namespace # jenis resource yang dibuat
+metadata:
+  name: cloudflare-tunnel # nama namespace
+  labels:
+    app: cloudflare-tunnel # label untuk memudahkan filter

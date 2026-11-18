@@ -1,0 +1,23 @@
+# Ingress untuk port 80: tidak menyajikan konten, hanya redirect ke HTTPS.
+apiVersion: networking.k8s.io/v1 # versi API Ingress, tetap seperti ini
+kind: Ingress # jenis resource yang dibuat
+metadata:
+  name: http-redirect-ingress # nama ingress
+  namespace: microservice-app # namespace harus sama dengan Middleware
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web # entrypoint HTTP (port 80)
+    traefik.ingress.kubernetes.io/router.middlewares: microservice-app-https-redirect@kubernetescrd # pakai middleware redirect
+    traefik.ingress.kubernetes.io/router.priority: "200" # diproses lebih dulu dari router HTTPS
+spec:
+  ingressClassName: traefik # pakai Traefik bawaan k3s
+  rules:
+    - host: tokenaiku.com # domain yang diketik di browser
+      http:
+        paths:
+          - path: / # semua path ikut redirect, termasuk /api dan /v1
+            pathType: Prefix # cocokkan / dan semua turunannya
+            backend:
+              service:
+                name: frontend-service # backend formal; tidak dipakai karena middleware redirect dulu
+                port:
+                  number: 80 # port Service frontend
