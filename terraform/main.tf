@@ -85,14 +85,32 @@ resource "aws_security_group" "aws_sg_app" {
   }
 }
 
-# Ingress dari web proxy (bastion) dihapus karena bastion sudah tidak ada.
-# Appserver tetap bisa diakses lewat SSM Port Forwarding.
-
 resource "aws_vpc_security_group_egress_rule" "app_egress" {
   security_group_id = aws_security_group.aws_sg_app.id
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"
   description       = "Allow all"
+}
+
+# HTTPS dari NAT instance. NAT mem-forward port 443 ke appserver:443 (DNAT),
+# jadi appserver hanya perlu menerima 443 dari security group NAT.
+resource "aws_vpc_security_group_ingress_rule" "app_ingress_https_from_nat" {
+  security_group_id            = aws_security_group.aws_sg_app.id
+  referenced_security_group_id = aws_security_group.aws_sg_nat.id
+  ip_protocol                  = "tcp"
+  from_port                    = 443
+  to_port                      = 443
+  description                  = "Allow HTTPS from NAT instance (DNAT)"
+}
+
+# Port 80 dipakai untuk redirect HTTP -> HTTPS, juga lewat NAT instance.
+resource "aws_vpc_security_group_ingress_rule" "app_ingress_http_from_nat" {
+  security_group_id            = aws_security_group.aws_sg_app.id
+  referenced_security_group_id = aws_security_group.aws_sg_nat.id
+  ip_protocol                  = "tcp"
+  from_port                    = 80
+  to_port                      = 80
+  description                  = "Allow HTTP from NAT instance (DNAT)"
 }
 
 resource "aws_security_group" "aws_sg_monitoring" {
@@ -101,8 +119,6 @@ resource "aws_security_group" "aws_sg_monitoring" {
   vpc_id      = aws_vpc.project.id
 }
 
-# Ingress monitoring dari bastion dihapus karena bastion sudah tidak ada.
-# Monitoring tetap bisa diakses lewat SSM Session Manager / port forwarding.
 
 resource "aws_vpc_security_group_egress_rule" "monitoring_egress" {
   security_group_id = aws_security_group.aws_sg_monitoring.id
@@ -127,6 +143,26 @@ resource "aws_vpc_security_group_ingress_rule" "nat_ingress_private_subnet" {
   cidr_ipv4         = var.private_subnet_cidr
   ip_protocol       = "-1"
   description       = "Allow all traffic from private subnet"
+}
+
+# Port 443 publik masuk ke NAT instance, lalu DNAT ke appserver di private subnet.
+resource "aws_vpc_security_group_ingress_rule" "nat_ingress_https_public" {
+  security_group_id = aws_security_group.aws_sg_nat.id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "tcp"
+  from_port         = 443
+  to_port           = 443
+  description       = "Allow public HTTPS to NAT instance"
+}
+
+# Port 80 publik masuk ke NAT instance, lalu DNAT ke appserver:80.
+resource "aws_vpc_security_group_ingress_rule" "nat_ingress_http_public" {
+  security_group_id = aws_security_group.aws_sg_nat.id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "tcp"
+  from_port         = 80
+  to_port           = 80
+  description       = "Allow public HTTP to NAT instance"
 }
 
 resource "aws_vpc_security_group_egress_rule" "nat_egress" {
@@ -195,7 +231,6 @@ resource "aws_vpc_endpoint" "ssm" {
   }
 }
 
-# Instance bastion (web proxy) beserta EIP-nya dihapus untuk penghematan biaya.
 # Akses ke appserver/monitoring sekarang hanya lewat SSM Session Manager.
 
 resource "aws_instance" "nat" {
@@ -212,8 +247,6 @@ resource "aws_instance" "nat" {
     Project = "Microservice-On-Kube-with-CICD"
   }
 
-  # AMI dikunci ke yang sudah dipakai agar tidak memicu penggantian instance
-  # hanya karena data.aws_ami.ubuntu mengambil image terbaru.
   lifecycle {
     ignore_changes = [ami]
   }

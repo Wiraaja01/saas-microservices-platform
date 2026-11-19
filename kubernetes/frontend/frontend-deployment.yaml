@@ -1,4 +1,4 @@
-# Deployment frontend: menjalankan image nginx yang berisi build React.
+# Deployment frontend
 apiVersion: apps/v1
 kind: Deployment 
 metadata:
@@ -31,10 +31,10 @@ spec:
             - configMapRef:
                 name: frontend-config 
           volumeMounts:
-            - name: nginx-conf # pasang nginx.conf dari ConfigMap
-              mountPath: /etc/nginx/conf.d/default.conf # menimpa config lama di image
-              subPath: default.conf # ambil satu key saja dari ConfigMap
+            - name: nginx-conf 
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
       volumes:
-        - name: nginx-conf # nama volume yang dipakai di atas
+        - name: nginx-conf 
           configMap:
             name: frontend-nginx-config # ConfigMap berisi nginx.conf yang benar

@@ -11,7 +11,7 @@ metadata:
 spec:
   ingressClassName: traefik # pakai Traefik bawaan k3s
   rules:
-    - host: tokenaiku.com # domain yang diketik di browser
+    - host: tokenaiku.my.id # domain yang diketik di browser
       http:
         paths:
           - path: / # semua path ikut redirect, termasuk /api dan /v1

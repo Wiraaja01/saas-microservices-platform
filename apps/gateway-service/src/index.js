@@ -39,7 +39,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-//sementara untuk rabbitMQ, karena limit dari instance rabbit mq dibuat dummy dan tetap jalan tanpa rabbbit MQ
+// sementara untuk rabbitMQ, karena limit dari instance rabbit mq dibuat dummy dan tetap jalan tanpa rabbbit MQ
 (async () => {
   try {
     await connectRabbitMQ();

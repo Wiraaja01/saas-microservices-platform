@@ -2,41 +2,41 @@
 
 variable "aws_region" {
   description = "region aws"
-  type = string
+  type        = string
 }
 
 variable "instance_type" {
-   description = "aws ec2 instance dibentuk"
-   type = string
-   default = "t3.small"
+  description = "aws ec2 instance dibentuk"
+  type        = string
+  default     = "t3.small"
 }
 
 variable "vpc_cidr" {
   description = "mendifine cidr block yang dibutuhkan"
-  type = string
-  default = "10.30.0.0/16"
-} 
+  type        = string
+  default     = "10.30.0.0/16"
+}
 
 variable "public_subnet_cidr" {
   description = "Separate vpc block to 256 IP"
-  type = string
-  default = "10.30.1.0/24"
+  type        = string
+  default     = "10.30.1.0/24"
 }
 
 variable "private_subnet_cidr" {
   description = "Separate vpc block to 256 IP with private subnet"
-  type = string
-  default = "10.30.10.0/24"
+  type        = string
+  default     = "10.30.10.0/24"
 }
 
 variable "public_ip_local" {
   description = "define IP public on local"
-  type = string
+  type        = string
 }
 
 variable "key_name" {
   description = "SSH key untuk aws"
-  type = string
+  type        = string
 }
 
 

@@ -1,10 +1,8 @@
-# Config statis untuk nginx di dalam pod frontend.
-# /api dan /v1 tidak perlu di-proxy di sini, sudah diatur Ingress.
-apiVersion: v1 # versi API ConfigMap
-kind: ConfigMap # jenis resource yang dibuat
+apiVersion: v1 
+kind: ConfigMap
 metadata:
-  name: frontend-nginx-config # nama yang dipakai Deployment
-  namespace: microservice-app # namespace harus sama dengan pod
+  name: frontend-nginx-config 
+  namespace: microservice-app 
 data:
   default.conf: |
     server {

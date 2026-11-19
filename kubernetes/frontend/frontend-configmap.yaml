@@ -1,10 +1,9 @@
-# Config environment untuk frontend (dipakai Deployment lewat envFrom).
-# Nama harus "frontend-config" karena Deployment mereferensikan nama ini.
-apiVersion: v1 # versi API ConfigMap, tetap v1
-kind: ConfigMap # jenis resource yang dibuat
+#untuk configmap frontend
+apiVersion: v1
+kind: ConfigMap
 metadata:
-  name: frontend-config # harus sama dengan configMapRef di Deployment
-  namespace: microservice-app # namespace harus sama dengan pod
+  name: frontend-configmap
+  namespace: microservice-app
 data:
-  VITE_API_URL: "https://tokenaiku.com/api" # alamat API lewat Ingress/Tunnel
-  VITE_GATEWAY_URL: "https://tokenaiku.com/v1" # alamat gateway lewat Ingress/Tunnel
+  PORT: "3000"
+  

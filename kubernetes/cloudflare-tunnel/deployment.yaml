@@ -1,19 +1,19 @@
-# cloudflared berjalan di dalam cluster dan membuka koneksi keluar ke Cloudflare.
-# Tidak perlu port inbound, tidak perlu EIP, tidak perlu ALB.
-apiVersion: apps/v1 # versi API Deployment
-kind: Deployment # jenis resource yang dibuat
+apiVersion: apps/v1 
+kind: Deployment 
 metadata:
-  name: cloudflared # nama deployment
-  namespace: cloudflare-tunnel # namespace harus sama dengan Secret
+  name: cloudflared 
+  namespace: cloudflare-tunnel 
 spec:
-  replicas: 1 # cukup satu pod untuk cluster single-node
+  # Set to 1 setelah Secret cloudflare-tunnel-token dibuat.
+  # Jalur publik utama saat ini memakai DNS A -> EIP NAT (DNAT), bukan tunnel.
+  replicas: 0
   selector:
     matchLabels:
-      app: cloudflared # harus sama dengan label pod
+      app: cloudflared 
   template:
     metadata:
       labels:
-        app: cloudflared # dipakai selector Deployment
+        app: cloudflared 
     spec:
       containers:
         - name: cloudflared # nama container
@@ -32,7 +32,7 @@ spec:
             - name: TUNNEL_TOKEN # cloudflared membaca otomatis env ini
               valueFrom:
                 secretKeyRef:
-                  name: cloudflare-tunnel-token # nama Secret (dibuat manual)
+                  name: cloudflare-tunnel-token
                   key: token # key di dalam Secret
           ports:
             - name: metrics # nama port untuk probe

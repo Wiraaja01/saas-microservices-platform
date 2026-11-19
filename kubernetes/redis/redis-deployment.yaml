@@ -28,7 +28,6 @@ spec:
         - name: redis
           image: redis:alpine
           imagePullPolicy: IfNotPresent
-          # maxmemory sengaja di bawah limit 64Mi supaya Redis membuang
           # key lama (LRU) sebelum container kena OOMKill.
           args:
             - redis-server

@@ -42,25 +42,27 @@ spec:
           resources:
             requests:
               cpu: "50m"
-              memory: "64Mi"
-            limits:
-              cpu: "200m"
               memory: "128Mi"
+            limits:
+              cpu: "300m"
+              memory: "384Mi"
+          # rabbitmq-diagnostics bisa lambat di node kecil; beri timeout lebih longgar
+          # supaya pod tidak restart karena probe timeout, bukan karena gagal sehat.
           startupProbe:
             exec:
               command: ["rabbitmq-diagnostics", "-q", "ping"]
             periodSeconds: 10
-            timeoutSeconds: 5
+            timeoutSeconds: 20
             failureThreshold: 30
           readinessProbe:
             exec:
               command: ["rabbitmq-diagnostics", "-q", "ping"]
-            periodSeconds: 10
-            timeoutSeconds: 5
+            periodSeconds: 15
+            timeoutSeconds: 15
             failureThreshold: 3
           livenessProbe:
             exec:
               command: ["rabbitmq-diagnostics", "-q", "ping"]
             periodSeconds: 30
-            timeoutSeconds: 5
-            failureThreshold: 3
+            timeoutSeconds: 20
+            failureThreshold: 4

@@ -1,4 +1,4 @@
-apiversion: apps/v1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: gatewayservice-deployment
@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: gatewayservice
-          image: wiraaja1/microservice-on-kube-with-cicd-gateway-service:latest
+          image: wiraaja1/microservice-on-kube-with-cicd-gateway-service:v2
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000
@@ -27,10 +27,19 @@ spec:
               memory: "128Mi"
             limits:
               cpu: "300m"
-              memory: "256Mi"
+              memory: "256Mi"           
           envFrom:
             - configMapRef:
                 name: gatewayservice-config
-            - secretRef:
-                name: gatewayservice-secret
+          env:
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: gatewayservice-secret
+                  key: RABBITMQ_DEFAULT_USER
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: gatewayservice-secret
+                  key: RABBITMQ_DEFAULT_PASS
               
