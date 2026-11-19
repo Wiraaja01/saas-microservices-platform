@@ -1,8 +1,8 @@
 # Microservice on Kubernetes with CI/CD
 
-This is a personal DevOps project built as part of my university coursework. It demonstrates a microservice-based AI API gateway platform deployed to a single-node k3s cluster on AWS, provisioned with Terraform and served at **https://tokenaiku.my.id**.
+This is a personal DevOps project. It demonstrates a microservice-based AI API gateway platform deployed to a single-node k3s cluster on AWS, provisioned with Terraform and served at **https://tokenaiku.my.id**.
 
-Public traffic takes the direct path: a DNS `A` record points to the Elastic IP of a NAT instance in the public subnet, and that instance uses `iptables` DNAT (configured from Terraform `user_data`) to forward ports 80/443 to the private appserver running Traefik. Cloudflare Tunnel is available as an optional alternative and is currently disabled.
+Public traffic takes the direct path: a DNS `A` record points to the Elastic IP of a NAT instance in the public subnet, and that instance uses `iptables` DNAT to forward ports 80/443 to the private appserver running Traefik. Cloudflare Tunnel is available as an optional alternative
 
 ## Project Overview
 
