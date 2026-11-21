@@ -4,8 +4,7 @@ metadata:
   name: cloudflared 
   namespace: cloudflare-tunnel 
 spec:
-  # Set to 1 setelah Secret cloudflare-tunnel-token dibuat.
-  # Jalur publik utama saat ini memakai DNS A -> EIP NAT (DNAT), bukan tunnel.
+  # Replica set 1 jikalau ingin menggunakan Cloudflare Tunnel
   replicas: 0
   selector:
     matchLabels:
@@ -16,18 +15,18 @@ spec:
         app: cloudflared 
     spec:
       containers:
-        - name: cloudflared # nama container
-          image: cloudflare/cloudflared:latest # image resmi Cloudflare
-          imagePullPolicy: IfNotPresent # ambil image hanya kalau belum ada di node
-          command: # urutan perintah sesuai dokumentasi Cloudflare
-            - cloudflared # binary utama
-            - tunnel # mode tunnel
-            - --no-autoupdate # jangan self-update di dalam container
-            - --loglevel # level log
-            - info # cukup info supaya hemat resource
-            - --metrics # endpoint health check
-            - 0.0.0.0:2000 # dengar di port 2000
-            - run # jalankan tunnel memakai token
+        - name: cloudflared 
+          image: cloudflare/cloudflared:latest 
+          imagePullPolicy: IfNotPresent 
+          command: 
+            - cloudflared 
+            - tunnel 
+            - --no-autoupdate 
+            - --loglevel 
+            - info 
+            - --metrics 
+            - 0.0.0.0:2000 
+            - run 
           env:
             - name: TUNNEL_TOKEN # cloudflared membaca otomatis env ini
               valueFrom:
@@ -35,25 +34,25 @@ spec:
                   name: cloudflare-tunnel-token
                   key: token # key di dalam Secret
           ports:
-            - name: metrics # nama port untuk probe
-              containerPort: 2000 # port /ready
+            - name: metrics 
+              containerPort: 2000 
           resources:
             requests:
-              cpu: "10m" # jatah CPU minimum
-              memory: "32Mi" # jatah memory minimum
+              cpu: "10m" 
+              memory: "32Mi" 
             limits:
               cpu: "100m" # batas CPU
               memory: "128Mi" # batas memory supaya node 2GB aman
-          readinessProbe: # cek apakah tunnel sudah tersambung
+          readinessProbe: 
             httpGet:
-              path: /ready # endpoint bawaan cloudflared
-              port: metrics # port 2000
-            initialDelaySeconds: 5 # tunggu 5 detik sebelum cek pertama
-            periodSeconds: 10 # cek tiap 10 detik
-          livenessProbe: # restart kalau tunnel putus
+              path: /ready 
+              port: metrics 
+            initialDelaySeconds: 5 
+            periodSeconds: 10 
+          livenessProbe: 
             httpGet:
-              path: /ready # endpoint yang sama
-              port: metrics # port 2000
-            initialDelaySeconds: 15 # beri waktu lebih lama saat boot
-            periodSeconds: 15 # cek tiap 15 detik
-            failureThreshold: 3 # restart setelah 3 kali gagal
+              path: /ready 
+              port: metrics 
+            initialDelaySeconds: 15 
+            periodSeconds: 15 
+            failureThreshold: 3 

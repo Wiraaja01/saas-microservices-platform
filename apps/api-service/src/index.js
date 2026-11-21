@@ -45,14 +45,22 @@ app.use((err, req, res, next) => {
 });
 
 // Graceful shutdown
-const server = app.listen(PORT, () => {
-  console.log(`🚀 API Service running on port ${PORT}`);
-});
-
-process.on('SIGTERM', async () => {
-  console.log('Shutting down API Service...');
-  server.close(async () => {
-    await prisma.$disconnect();
-    process.exit(0);
+// `require.main === module` artinya file ini dijalankan langsung
+// (node src/index.js / npm start). Kalau file ini di-require dari test,
+// blok ini dilewati supaya tidak membuka port dan bikin Jest menggantung.
+if (require.main === module) {
+  const server = app.listen(PORT, () => {
+    console.log(`🚀 API Service running on port ${PORT}`);
   });
-});
+
+  process.on('SIGTERM', async () => {
+    console.log('Shutting down API Service...');
+    server.close(async () => {
+      await prisma.$disconnect();
+      process.exit(0);
+    });
+  });
+}
+
+// Diekspor supaya bisa dites dengan supertest tanpa menyalakan server.
+module.exports = app;

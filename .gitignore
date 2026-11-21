@@ -6,6 +6,11 @@ package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
+# Pengecualian: lockfile api-service HARUS ikut repo.
+# CI memakai `npm ci` (butuh package-lock.json) dan `cache-dependency-path`
+# di workflow menunjuk ke file ini. Tanpa file ini, step npm ci langsung gagal.
+!apps/api-service/package-lock.json
+
 .env
 .env.local
 .env.*.local
@@ -116,3 +121,8 @@ tmp/
 
 # Local runtime databases & storage
 data/
+
+# Catatan belajar lokal — jangan ikut ke GitHub
+docs/cicd-api-service.md
+# Kalau nanti mau semua catatan lokal di-ignore sekaligus, pakai pola folder:
+# docs/local/

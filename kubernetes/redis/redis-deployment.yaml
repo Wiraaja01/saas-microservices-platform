@@ -1,4 +1,3 @@
----
 # Redis untuk cache API dan rate limit gateway.
 # Tidak memakai persistent storage: data hilang saat pod restart.
 apiVersion: apps/v1
