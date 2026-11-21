@@ -5,12 +5,12 @@ on:
     branches: [main]
     paths:
       - "apps/api-service/**"
-      - ".github/workflows/ci-api-service.yml"
+      - ".github/workflows/ci-api-service.yaml"
   pull_request:
     branches: [main]
     paths:
       - "apps/api-service/**"
-      - ".github/workflows/ci-api-service.yml"
+      - ".github/workflows/ci-api-service.yaml"
 #tambahkan permission untuk hanya read konten saja, ditambahkan by auth supaya tidak ada error "Resource not accessible by integration" saat checkout
 permissions:
   contents: read
@@ -34,7 +34,10 @@ jobs:
       - name: "2. Configure Node.js"
         uses: actions/setup-node@v4
         with:
-          node-version: "node:22-alpine"      
+          # HARUS angka versi ("22"), bukan nama image Docker ("node:22-alpine").
+          # setup-node mengunduh Node dari nodejs.org, bukan dari Docker Hub.
+          # Samakan dengan Dockerfile: FROM node:22-alpine.
+          node-version: "22"
           cache: npm
           cache-dependency-path: apps/api-service/package-lock.json
 
@@ -48,11 +51,16 @@ jobs:
 
       - name: "3. Automated testing"
         working-directory: ${{ env.APP_PATH }}
-        run: npm install && npm test
+        # `npm ci` sudah dijalankan di step 2b, jadi tidak perlu `npm install` lagi.
+        # --ci = jangan bikin snapshot baru; --coverage = laporan untuk artifact.
+        run: npm test -- --ci --coverage
         env:
           NODE_ENV: test
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Nilai dummy. Test me-mock Prisma & Redis, jadi TIDAK ada koneksi
+          # database sungguhan. Jangan pakai secret production di sini.
+          DATABASE_URL: postgresql://test:test@localhost:5432/testdb
           JWT_SECRET: test-secret
+          JWT_EXPIRES_IN: 1h
 
       - name: "4. Docker login"
         uses: docker/login-action@v3
@@ -64,6 +72,9 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ${{ env.APP_PATH }}
+          # Eksplisit: pakai apps/api-service/Dockerfile (node 22),
+          # BUKAN apps/api-service/src/Dockerfile (node 18, file lama).
+          file: ${{ env.APP_PATH }}/Dockerfile
           push: true
           tags: |
             ${{ env.IMAGE_NAME }}:${{ github.sha }}
