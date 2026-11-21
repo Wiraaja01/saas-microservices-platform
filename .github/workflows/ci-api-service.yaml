@@ -1,0 +1,76 @@
+name: CI untuk API Service
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "apps/api-service/**"
+      - ".github/workflows/ci-api-service.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/api-service/**"
+      - ".github/workflows/ci-api-service.yml"
+#tambahkan permission untuk hanya read konten saja, ditambahkan by auth supaya tidak ada error "Resource not accessible by integration" saat checkout
+permissions:
+  contents: read
+#concurrency = mencegah job yang sama berjalan bersamaan, misal kalau ada 2 push sekaligus
+#cancel in progress = membatalkan job yang sedang berjalan kalau ada job baru yang sama
+concurrency:
+  group: ci-api-service-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  IMAGE_NAME: wiraaja1/microservice-on-kube-with-cicd-api-service
+  APP_PATH: apps/api-service
+
+jobs:
+  build-and-push:
+    name: Build & Push Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: "1. Checkout code"
+        uses: actions/checkout@v4
+
+      - name: "2. Configure Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: "node:22-alpine"      
+          cache: npm
+          cache-dependency-path: apps/api-service/package-lock.json
+
+      - name: "2b. Install dependencies"
+        working-directory: ${{ env.APP_PATH }}
+        run: npm ci
+
+      - name: "2c. Prisma generate"
+        working-directory: ${{ env.APP_PATH }}
+        run: npx prisma generate
+
+      - name: "3. Automated testing"
+        working-directory: ${{ env.APP_PATH }}
+        run: npm install && npm test
+        env:
+          NODE_ENV: test
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: test-secret
+
+      - name: "4. Docker login"
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          
+      - name: "5a. Build image"
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ env.APP_PATH }}
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.IMAGE_NAME }}:latest
+
+      - name: "5b. Simpan tag image"
+        id: image
+        run: echo "tag=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+    outputs:
+      image_tag: ${{ steps.image.outputs.tag }}
