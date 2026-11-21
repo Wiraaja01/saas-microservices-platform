@@ -1,9 +1,3 @@
-// Test endpoint analytics: ringkasan dan agregasi harian.
-//
-// Bagian yang paling layak dites di sini adalah MATEMATIKA-nya
-// (rata-rata latency, total token, pengelompokan per hari), karena
-// itulah yang gampang salah dan sulit terlihat kalau hanya dicoba manual.
-
 jest.mock('../src/config/prisma', () => require('./helpers/prismaMock').createPrismaMock());
 jest.mock('../src/config/redis', () => ({ set: jest.fn(), get: jest.fn(), on: jest.fn() }));
 
