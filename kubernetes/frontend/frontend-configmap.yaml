@@ -1,9 +1,0 @@
-#untuk configmap frontend
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: frontend-configmap
-  namespace: microservice-app
-data:
-  PORT: "3000"
-  
