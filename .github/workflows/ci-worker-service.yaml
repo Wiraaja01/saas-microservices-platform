@@ -1,0 +1,70 @@
+name: CI untuk Worker Service
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "apps/worker-service/**"
+      - ".github/workflows/ci-worker-service.yaml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/worker-service/**"
+      - ".github/workflows/ci-worker-service.yaml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-worker-service-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE_NAME: wiraaja1/microservice-on-kube-with-cicd-worker-service
+  APP_PATH: apps/worker-service
+
+jobs:
+  build-and-push:
+    name: Build & Push Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: "1. Checkout code"
+        uses: actions/checkout@v4
+
+      - name: "2. Configure Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/worker-service/package-lock.json
+
+      - name: "3. Install dependencies"
+        working-directory: ${{ env.APP_PATH }}
+        run: npm ci
+
+      - name: "4. Prisma generate"
+        working-directory: ${{ env.APP_PATH }}
+        run: npx prisma generate
+
+      - name: "5. Cek sintaks"
+        working-directory: ${{ env.APP_PATH }}
+        run: |
+          for file in $(find src -name "*.js"); do
+            node --check "$file"
+          done
+
+      - name: "6. Docker login"
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: "7. Build image"
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ env.APP_PATH }}
+          file: ${{ env.APP_PATH }}/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.IMAGE_NAME }}:latest
