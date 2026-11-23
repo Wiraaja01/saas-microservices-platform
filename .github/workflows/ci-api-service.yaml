@@ -64,9 +64,6 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           projectBaseDir: ${{ env.APP_PATH }}
-          args: >
-           -Dsonar.projectKey=Wiraaja01_saas-microservices-platform
-           -Dsonar.organization=wiraaja01
 
       - name: "4. Docker login"
         uses: docker/login-action@v3
