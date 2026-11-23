@@ -81,7 +81,7 @@ jobs:
             ${{ env.IMAGE_NAME }}:scan
 
       - name: "6. Scan Trivy for Code Vulnerability"
-        uses: aquasecurity/trivy-action@v0.32.0
+        uses: aquasecurity/trivy-action@master
         with:
           scan-type: "image"
           image-ref: ${{ env.IMAGE_NAME }}:scan # mengarah ke image yang akan di-scan
