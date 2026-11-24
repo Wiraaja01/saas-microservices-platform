@@ -61,7 +61,7 @@ jobs:
       - name: "3b. SonarCloud Scan (SAST)" #this is optional for expanding knowledge, loving devsecops so much
         uses: SonarSource/sonarqube-scan-action@v8
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_APISERVICE }}
         with:
           projectBaseDir: ${{ env.APP_PATH }}
 
