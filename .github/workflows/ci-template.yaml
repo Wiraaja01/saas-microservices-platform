@@ -1,0 +1,138 @@
+name: CI untuk Template Workflows
+on:
+  workflow_call:
+    inputs:
+      app_path:
+        required: true
+        type: string
+      image_name:
+        required: true
+        type: string
+      install_command:
+        required: false
+        type: string
+        default: "npm ci"
+      run_prisma:
+        required: false
+        type: boolean
+        default: false
+      run_build:
+        required: false
+        type: boolean
+        default: false
+      run_syntax_check:
+        required: false
+        type: boolean
+        default: false
+      run_tests:
+        required: false
+        type: boolean
+        default: false
+      run_sonar:
+        required: false
+        type: boolean
+        default: true
+      run_trivy:
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      SONAR_TOKEN:
+        required: false
+      DOCKERHUB_USERNAME:
+        required: true
+      DOCKERHUB_TOKEN:
+        required: true
+
+jobs:
+  build-and-push:
+    name: Build & Push Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: "1. Checkout code"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "2. Configure Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ${{ inputs.app_path }}/package-lock.json
+
+      - name: "3. Install dependencies"
+        working-directory: ${{ inputs.app_path }}
+        run: ${{ inputs.install_command }}
+
+      - name: "3b. Prisma generate"
+        if: inputs.run_prisma
+        working-directory: ${{ inputs.app_path }}
+        run: npx prisma generate
+
+      - name: "3c. Build"
+        if: inputs.run_build
+        working-directory: ${{ inputs.app_path }}
+        run: npm run build
+
+      - name: "3d. Cek sintaks"
+        if: inputs.run_syntax_check
+        working-directory: ${{ inputs.app_path }}
+        run: |
+          for file in $(find src -name "*.js"); do
+            node --check "$file"
+          done
+
+      - name: "4. Automated testing"
+        if: inputs.run_tests
+        working-directory: ${{ inputs.app_path }}
+        run: npm test -- --ci --coverage
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test:test@localhost:5432/testdb
+          JWT_SECRET: test-secret
+          JWT_EXPIRES_IN: 1h
+
+      - name: "5. SonarCloud Scan (SAST)"
+        if: inputs.run_sonar
+        uses: SonarSource/sonarqube-scan-action@v8
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: ${{ inputs.app_path }}
+
+      - name: "6. Docker login"
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: "7. Build image"
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ inputs.app_path }}
+          file: ${{ inputs.app_path }}/Dockerfile
+          load: true
+          tags: |
+            ${{ inputs.image_name }}:scan
+
+      - name: "8. Scan Trivy"
+        if: inputs.run_trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "image"
+          image-ref: ${{ inputs.image_name }}:scan
+          format: "table"
+          exit-code: "1"
+          severity: "CRITICAL,HIGH"
+          trivyignores: "${{ inputs.app_path }}/.trivyignore"
+
+      - name: "9. Push image"
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ inputs.app_path }}
+          file: ${{ inputs.app_path }}/Dockerfile
+          push: true
+          tags: |
+            ${{ inputs.image_name }}:${{ github.sha }}
+            ${{ inputs.image_name }}:latest
