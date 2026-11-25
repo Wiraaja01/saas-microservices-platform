@@ -6,11 +6,13 @@ on:
     paths:
       - "apps/gateway-service/**"
       - ".github/workflows/ci-gateway-service.yaml"
+      - ".github/workflows/ci-template.yaml"
   pull_request:
     branches: [main]
     paths:
       - "apps/gateway-service/**"
       - ".github/workflows/ci-gateway-service.yaml"
+      - ".github/workflows/ci-template.yaml"
 
 permissions:
   contents: read
@@ -19,48 +21,17 @@ concurrency:
   group: ci-gateway-service-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  IMAGE_NAME: wiraaja1/microservice-on-kube-with-cicd-gateway-service
-  APP_PATH: apps/gateway-service
-
 jobs:
-  build-and-push:
-    name: Build & Push Image
-    runs-on: ubuntu-latest
-    steps:
-      - name: "1. Checkout code"
-        uses: actions/checkout@v4
-
-      - name: "2. Configure Node.js"
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: apps/gateway-service/package-lock.json
-
-      - name: "3. Install dependencies"
-        working-directory: ${{ env.APP_PATH }}
-        run: npm ci
-
-      - name: "4. Cek sintaks"
-        working-directory: ${{ env.APP_PATH }}
-        run: |
-          for file in $(find src -name "*.js"); do
-            node --check "$file"
-          done
-
-      - name: "5. Docker login"
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: "6. Build image"
-        uses: docker/build-push-action@v5
-        with:
-          context: ${{ env.APP_PATH }}
-          file: ${{ env.APP_PATH }}/Dockerfile
-          push: true
-          tags: |
-            ${{ env.IMAGE_NAME }}:${{ github.sha }}
-            ${{ env.IMAGE_NAME }}:latest
+  ci:
+    name: CI Gateway Service
+    uses: ./.github/workflows/ci-template.yaml
+    with:
+      app_path: apps/gateway-service
+      image_name: wiraaja1/microservice-on-kube-with-cicd-gateway-service
+      run_tests: true
+      run_sonar: true
+      run_trivy: true
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_GATEWAY }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
