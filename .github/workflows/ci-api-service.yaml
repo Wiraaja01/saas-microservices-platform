@@ -6,97 +6,33 @@ on:
     paths:
       - "apps/api-service/**"
       - ".github/workflows/ci-api-service.yaml"
+      - ".github/workflows/ci-template.yaml"
   pull_request:
     branches: [main]
     paths:
       - "apps/api-service/**"
       - ".github/workflows/ci-api-service.yaml"
-#tambahkan permission untuk hanya read konten saja
+      - ".github/workflows/ci-template.yaml"
+
 permissions:
   contents: read
-#concurrency = mencegah job yang sama berjalan bersamaan, misal kalau ada 2 push sekaligus
-#cancel in progress = membatalkan job yang sedang berjalan kalau ada job baru yang sama
+
 concurrency:
   group: ci-api-service-${{ github.ref }}
   cancel-in-progress: true
-env:
-  IMAGE_NAME: wiraaja1/microservice-on-kube-with-cicd-api-service
-  APP_PATH: apps/api-service
 
 jobs:
-  build-and-push:
-    name: Build & Push Image
-    runs-on: ubuntu-latest
-    steps:
-      - name: "1. Checkout code"
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: "2. Configure Node.js"
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: apps/api-service/package-lock.json
-
-      - name: "2b. Install dependencies"
-        working-directory: ${{ env.APP_PATH }}
-        run: npm ci
-
-      - name: "2c. Prisma generate"
-        working-directory: ${{ env.APP_PATH }}
-        run: npx prisma generate
-
-      - name: "3. Automated testing"
-        working-directory: ${{ env.APP_PATH }}
-        run: npm test -- --ci --coverage
-        env:
-          NODE_ENV: test
-          #menggunakan test dummy supaya tidak mengganggu database yang asli
-          DATABASE_URL: postgresql://test:test@localhost:5432/testdb
-          JWT_SECRET: test-secret
-          JWT_EXPIRES_IN: 1h
-
-      - name: "3b. SonarCloud Scan (SAST)" #this is optional for expanding knowledge, loving devsecops so much
-        uses: SonarSource/sonarqube-scan-action@v8
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_APISERVICE }}
-        with:
-          projectBaseDir: ${{ env.APP_PATH }}
-
-      - name: "4. Docker login"
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          
-      - name: "5. Build image"
-        uses: docker/build-push-action@v5
-        with:
-          context: ${{ env.APP_PATH }}
-          file: ${{ env.APP_PATH }}/Dockerfile
-          load: true
-          tags: |
-            ${{ env.IMAGE_NAME }}:scan
-
-      - name: "6. Scan Trivy for Code Vulnerability"
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: "image"
-          image-ref: ${{ env.IMAGE_NAME }}:scan # mengarah ke image yang akan di-scan
-          format: "table"
-          exit-code: "1"
-          severity: "CRITICAL,HIGH"
-          trivyignores: "${{ env.APP_PATH }}/.trivyignore"
-
-      - name: "7. Push to Docker Hub / Optional GCR / ECR"
-        uses: docker/build-push-action@v5
-        with:
-          context: ${{ env.APP_PATH }}
-          file: ${{ env.APP_PATH }}/Dockerfile
-          push: true
-          tags: |
-            ${{ env.IMAGE_NAME }}:${{ github.sha }}
-            ${{ env.IMAGE_NAME }}:latest
-        
+  ci:
+    name: CI API Service
+    uses: ./.github/workflows/ci-template.yaml
+    with:
+      app_path: apps/api-service
+      image_name: wiraaja1/microservice-on-kube-with-cicd-api-service
+      run_prisma: true
+      run_tests: true
+      run_sonar: true
+      run_trivy: true
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_APISERVICE }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}

@@ -36,6 +36,10 @@ on:
         required: false
         type: boolean
         default: false
+      check_sigstore:
+        required: false
+        type: boolean
+        default: false
     secrets:
       SONAR_TOKEN:
         required: false
@@ -115,6 +119,13 @@ jobs:
           load: true
           tags: |
             ${{ inputs.image_name }}:scan
+            
+#hanya kalo dibutuhkan check sigstore untuk ttd digital kode untuk devsecops (maygad aku suka devops)
+      - name: "7b. Check sigstore version in image"
+        if: ${{ inputs.check_sigstore == true }} 
+        run: |
+          docker run --rm --entrypoint sh "${{ inputs.image_name }}:scan" -c \
+            'node -p "require(\"/usr/local/lib/node_modules/npm/node_modules/sigstore/package.json\").version"'
 
       - name: "8. Scan Trivy"
         if: inputs.run_trivy
