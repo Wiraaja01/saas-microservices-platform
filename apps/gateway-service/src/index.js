@@ -40,19 +40,28 @@ app.use((err, req, res, next) => {
 });
 
 // sementara untuk rabbitMQ, karena limit dari instance rabbit mq dibuat dummy dan tetap jalan tanpa rabbbit MQ
-(async () => {
-  try {
-    await connectRabbitMQ();
-  } catch (err) {
-    console.error("Gagal konek RabbitMQ, lanjut jalan tanpa queue...");
-  }
-  const server = app.listen(PORT, () => { console.log(`🚀 Gateway Service running on port ${PORT}`); });
-})();
+// Blok ini hanya jalan kalau file dieksekusi langsung (npm start).
+// Saat di-require oleh test, server tidak dinyalakan supaya Jest tidak menggantung.
+if (require.main === module) {
+  (async () => {
+    try {
+      await connectRabbitMQ();
+    } catch (err) {
+      console.error("Gagal konek RabbitMQ, lanjut jalan tanpa queue...");
+    }
 
-  process.on('SIGTERM', async () => {
-    console.log('Shutting down Gateway Service...');
-    server.close(async () => {
-      redis.disconnect();
-      process.exit(0);
+    const server = app.listen(PORT, () => {
+      console.log(`🚀 Gateway Service running on port ${PORT}`);
     });
-  });
+
+    process.on('SIGTERM', async () => {
+      console.log('Shutting down Gateway Service...');
+      server.close(async () => {
+        redis.disconnect();
+        process.exit(0);
+      });
+    });
+  })();
+}
+
+module.exports = app;
