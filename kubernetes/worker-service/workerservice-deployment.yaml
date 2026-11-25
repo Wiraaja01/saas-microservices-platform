@@ -1,0 +1,28 @@
+#Disini worker-service tidak diaktifkan
+#Menggunakan Instance t3.small sangat minim resource
+#Jadi deployment ini optional
+#Tidak menggunakan service dan ingress, karena tidka konek internet dan tidak ada yang membutuhkan untuk IP
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: workerservice-deployment
+spec:
+  selector:
+    matchLabels:
+      app: workerservice
+  template:
+    metadata:
+      labels:
+        app: workerservice
+    spec:
+      containers:
+        - name: workerservice
+          image: wiraaja1/microservice-on-kube-with-cicd-worker-service:latest
+          imagePullPolicy: Always
+          resources:
+          request:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "100Mi"
+            cpu: "500m"
