@@ -31,7 +31,7 @@ jobs:
       run_tests: true
       run_sonar: true
       run_trivy: true
-      check_sigstore: true
+      push_image: true
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_GATEWAY }}
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}

@@ -1,19 +1,18 @@
-name: CI for Frontend Service
-
+name: CI untuk Frontend Service
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - "apps/frontend/**"
       - ".github/workflows/ci-frontend-service.yaml"
+      - ".github/workflows/ci-template.yaml"
   pull_request:
-    branches:
-      - main
+    branches: [main]
     paths:
       - "apps/frontend/**"
       - ".github/workflows/ci-frontend-service.yaml"
+      - ".github/workflows/ci-template.yaml"
 
 permissions:
   contents: read
@@ -22,44 +21,19 @@ concurrency:
   group: ci-frontend-service-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  IMAGE_NAME: wiraaja1/microservice-on-kube-with-cicd-frontend
-  APP_PATH: apps/frontend
-
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set untuk Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: apps/frontend/package-lock.json
-
-      - name: Install dependencies
-        working-directory: ${{ env.APP_PATH }}
-        run: npm ci --legacy-peer-deps
-
-      - name: Build frontend
-        working-directory: ${{ env.APP_PATH }}
-        run: npm run build
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build and push image
-        uses: docker/build-push-action@v5
-        with:
-          context: ${{ env.APP_PATH }}
-          file: ${{ env.APP_PATH }}/Dockerfile
-          push: true
-          tags: |
-            ${{ env.IMAGE_NAME }}:${{ github.sha }}
-            ${{ env.IMAGE_NAME }}:latest
+  ci:
+    name: CI Frontend Service
+    uses: ./.github/workflows/ci-template.yaml
+    with:
+      app_path: apps/frontend
+      image_name: wiraaja1/microservice-on-kube-with-cicd-frontend
+      install_command: npm ci --legacy-peer-deps
+      run_build: true
+      run_sonar: true
+      run_trivy: false
+      push_image: true
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_FRONTEND }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
