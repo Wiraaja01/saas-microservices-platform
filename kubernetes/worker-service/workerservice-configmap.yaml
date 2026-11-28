@@ -1,0 +1,13 @@
+# ConfigMap untuk worker-service.
+# Worker adalah queue consumer RabbitMQ dan TIDAK membuka port HTTP,
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: workerservice-config
+  namespace: microservice-app
+data:
+  NODE_ENV: "production"
+  # Dibaca di src/config/rabbitmq.js (channel.prefetch)
+  WORKER_CONCURRENCY: "10"
+  # RabbitMQ masih dinonaktifkan (kubernetes/_disabled/) karena RAM node 2 GB.
+  RABBITMQ_URL: "amqp://guest:guest@rabbitmq-service:5672"
