@@ -1,0 +1,59 @@
+# Deployment worker-service (queue consumer).
+# Sengaja replicas: 0 karena:
+#   1. node t3.small hanya 2 GB RAM
+#   2. RabbitMQ masih dinonaktifkan
+#   3. worker tidak membuka port HTTP -> tidak perlu Service/Ingress
+# Naikkan ke 1 setelah RabbitMQ diaktifkan.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: workerservice-deployment
+  namespace: microservice-app
+  labels:
+    app: workerservice
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: workerservice
+  template:
+    metadata:
+      labels:
+        app: workerservice
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: workerservice
+          image: wiraaja1/microservice-on-kube-with-cicd-worker-service:latest
+          imagePullPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: workerservice-config
+          env:
+            # Worker memakai database yang sama dengan api-service,
+            # jadi kredensialnya diambil dari secret yang sama.
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: apiservice-secret
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: apiservice-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: apiservice-secret
+                  key: POSTGRES_PASSWORD
+            # Prisma membaca DATABASE_URL, bukan host/port terpisah.
+            - name: DATABASE_URL
+              value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-service:5432/$(POSTGRES_DB)"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"

@@ -1,0 +1,87 @@
+#deployment api service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apiservice-deployment
+  namespace: microservice-app
+  labels:
+    app: apiservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: apiservice
+  template:
+    metadata:
+      labels:
+        app: apiservice
+    spec:
+      containers:
+        - name: apiservice
+          image: wiraaja1/microservice-on-kube-with-cicd-api-service:v2
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 4000
+#tambah probe untuk cek kesehatan container
+#sempat ada kejadian CrashloopBackOff karena memory limit, jadi menambahkan startup probe
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
+          resources:
+            requests:
+#setel sesuai kebutuhan. Ini masih prototype 1
+#Sempet ada kejadian CrashloopBackOff karena memory limit
+              memory: "128Mi"
+              cpu: "500m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          envFrom:
+            - configMapRef:
+                name: apiservice-env-configmap
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: apiservice-secret
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: apiservice-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: apiservice-secret
+                  key: POSTGRES_PASSWORD
+            # Prisma membaca DATABASE_URL (bukan DB_HOST terpisah).
+            - name: DATABASE_URL
+              value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-service:5432/$(POSTGRES_DB)"
+            # Wajib ada di production
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: apiservice-secret
+                  key: JWT_SECRET
